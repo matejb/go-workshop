@@ -7,16 +7,22 @@ import (
 )
 
 func TestFlags(t *testing.T) {
-	expected := "test_path"
 
-	flag.Set("list", expected)
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
-	listPath := Flag("list")
+	_ = parseFlags()
 
-	if listPath != expected {
+	if !flag.Parsed() {
+		t.Error("Expected cli flags to be parsed!")
+	}
+
+	if flag.Lookup("list") == nil {
 		t.Errorf("Expected cli flag %q to be readed", "list")
 	}
 
+	if flag.Lookup("out") == nil {
+		t.Errorf("Expected cli flag %q to be readed", "out")
+	}
 }
 
 func TestList(t *testing.T) {
