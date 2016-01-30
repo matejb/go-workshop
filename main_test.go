@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestFlags(t *testing.T) {
@@ -101,35 +102,76 @@ func TestMarge(t *testing.T) {
 	}
 }
 
-// func TestFaze1(t *testing.T) {
-// 	outPath := "test_resources" + string(os.PathSeparator) + "merged.css"
-// 	inPath := "test_resources" + string(os.PathSeparator) + "list.js"
+func TestWatch(t *testing.T) {
+	paths := []string{
+		"test_resources" + string(os.PathSeparator) + "first.css",
+	}
 
-// 	defer func() {
-// 		if _, err := os.Stat(outPath); err == nil {
-// 			err := os.Remove(outPath)
-// 			if err != nil {
-// 				t.Fatal(err)
-// 			}
-// 		}
-// 	}()
+	originalContent, err := ioutil.ReadFile(paths[0])
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	cmd := exec.Command("go", "run", "main.go", "--list", inPath, "--out", outPath)
-// 	err := cmd.Run()
-// 	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
-// 		t.Fatalf("Faze 1 test process ran with err %v, want exit status 0", err)
-// 	}
+	defer func(filename string, content []byte) {
+		err := ioutil.WriteFile(filename, content, 0666)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(paths[0], originalContent)
 
-// 	expected := `h1 {color: red;}
-// p {color: purple;}
-// strong {color: yellow;}`
+	tempFile, err := ioutil.TempFile("test_resources", "cssWatchTest")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	result, err := ioutil.ReadFile(outPath)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	stat, err := tempFile.Stat()
+	if err != nil {
+		tempFile.Close()
+		t.Fatal(err)
+	}
 
-// 	if string(result) != expected {
-// 		t.Fatalf("Faze 1 fails, got %s", result)
-// 	}
-// }
+	out := "test_resources" + string(os.PathSeparator) + stat.Name()
+
+	tempFile.Close()
+
+	defer func() {
+		os.Remove(out)
+	}()
+
+	go func() {
+		err := watch(paths, out)
+		if err != nil {
+			t.Errorf("Error while watching %q", err)
+		}
+	}()
+
+	initStats, err := os.Stat(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(1 * time.Second)
+
+	cssFile, err := os.OpenFile(paths[0], os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := cssFile.WriteString("/* --- */"); err != nil {
+		cssFile.Close()
+		t.Fatal(err)
+	}
+
+	cssFile.Close()
+
+	time.Sleep(1 * time.Second)
+
+	endStats, err := os.Stat(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if endStats.Size() == initStats.Size() {
+		t.Errorf("Watch process is not working %d %d", endStats.Size(), initStats.Size())
+	}
+}

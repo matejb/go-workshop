@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 )
 
 // main is the function that will be called when program starts, when main function exists program exists
@@ -96,4 +98,71 @@ func merge(cssFilePaths []string, mergedFile string) (err error) {
 	}
 
 	return nil
+}
+
+// watch will watch changes in cssFilePaths files and rebuild mergedFile
+func watch(cssFilePaths []string, mergedFile string) (err error) {
+
+	rebuildCh := make(chan bool)
+	errCh := make(chan error)
+	cleanupCh := make(chan struct{})
+
+	watchSingleFile := func(path string, rebuildCh chan bool, errCh chan error, cleanupCh chan struct{}) {
+		initStat, err := os.Stat(path)
+		if err != nil {
+			select {
+			case errCh <- err:
+				return
+			case <-cleanupCh:
+				return
+			}
+		}
+
+		fmt.Printf("Added %q to watch list\n", path)
+
+		for {
+			stat, err := os.Stat(path)
+			if err != nil {
+				select {
+				case errCh <- err:
+					return
+				case <-cleanupCh:
+					return
+				}
+			}
+
+			if stat.Size() != initStat.Size() || stat.ModTime() != initStat.ModTime() {
+				select {
+				case rebuildCh <- true:
+					initStat = stat
+				case <-cleanupCh:
+					return
+				}
+			}
+
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	for _, path := range cssFilePaths {
+		go watchSingleFile(path, rebuildCh, errCh, cleanupCh)
+	}
+
+	for {
+		select {
+
+		case <-rebuildCh:
+			err := merge(cssFilePaths, mergedFile)
+			if err != nil {
+				close(cleanupCh)
+				return err
+			}
+			fmt.Println("Rebuilded")
+
+		case err := <-errCh:
+			close(cleanupCh)
+			return err
+		}
+	}
+
 }
