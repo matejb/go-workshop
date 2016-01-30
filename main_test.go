@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -27,14 +28,14 @@ func TestFlags(t *testing.T) {
 
 func TestList(t *testing.T) {
 	expected := []string{
-		"first.css",
-		"second.css",
-		"third.css",
+		"test_resources/first.css",
+		"test_resources/second.css",
+		"test_resources/third.css",
 	}
 
 	listPath := "test_resources" + string(os.PathSeparator) + "list.js"
 
-	result, err := List(listPath)
+	result, err := list(listPath)
 	if err != nil {
 		t.Fatalf("List loading failed with error %s", err)
 	}
@@ -47,6 +48,56 @@ func TestList(t *testing.T) {
 		if result[i] != expected[i] {
 			t.Errorf("For path %d, expeced %s but recoved %s", i, expected[i], result[i])
 		}
+	}
+}
+
+func TestMarge(t *testing.T) {
+	paths := []string{
+		"test_resources" + string(os.PathSeparator) + "first.css",
+		"test_resources" + string(os.PathSeparator) + "second.css",
+		"test_resources" + string(os.PathSeparator) + "third.css",
+	}
+
+	tempFile, err := ioutil.TempFile("test_resources", "cssMergeTest")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stat, err := tempFile.Stat()
+	if err != nil {
+		tempFile.Close()
+		t.Fatal(err)
+	}
+
+	out := "test_resources" + string(os.PathSeparator) + stat.Name()
+
+	tempFile.Close()
+
+	defer func() {
+		os.Remove(out)
+	}()
+
+	err = merge(paths, out)
+	if err != nil {
+		t.Errorf("Merge failed with error %q", err)
+	}
+
+	outContent, err := ioutil.ReadFile(out)
+	if err != nil {
+		t.Errorf("Reading of out file failed with error %q", err)
+	}
+
+	var expected []byte
+	for _, path := range paths {
+		cssContent, err := ioutil.ReadFile(path)
+		if err != nil {
+			t.Fatalf("Test setup failed while processing path %q with error %q", path, err)
+		}
+		expected = append(expected, cssContent...)
+	}
+
+	if string(outContent) != string(expected) {
+		t.Errorf("Expected %q recived %q", expected, outContent)
 	}
 }
 
