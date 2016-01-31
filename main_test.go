@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -9,13 +10,18 @@ import (
 )
 
 var (
-	faze int
+	phaze int
 )
 
 func init() {
-	flag.IntVar(&faze, "faze", 3, "Which program faze to test")
+	flag.IntVar(&phaze, "phaze", 3, "Which program phaze to test")
 
 	flag.Parse()
+
+	fmt.Println(`Custom flags for 'go test':
+  -phaze int
+    	Which program phaze to test (default 3)
+`)
 }
 
 func TestFlags(t *testing.T) {
@@ -113,7 +119,7 @@ func TestMarge(t *testing.T) {
 }
 
 func TestWatch(t *testing.T) {
-	if faze < 2 {
+	if phaze < 2 {
 		return
 	}
 
@@ -191,7 +197,7 @@ func TestWatch(t *testing.T) {
 }
 
 func TestWatchFlag(t *testing.T) {
-	if faze < 2 {
+	if phaze < 2 {
 		return
 	}
 

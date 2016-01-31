@@ -112,6 +112,8 @@ func merge(cssFilePaths []string, mergedFile string) (err error) {
 // watch will watch changes in cssFilePaths files and rebuild mergedFile
 func watch(cssFilePaths []string, mergedFile string) (err error) {
 
+	fmt.Println("Watch mode: started")
+
 	rebuildCh := make(chan bool)
 	errCh := make(chan error)
 	cleanupCh := make(chan struct{})
@@ -127,7 +129,7 @@ func watch(cssFilePaths []string, mergedFile string) (err error) {
 			}
 		}
 
-		fmt.Printf("Added %q to watch list\n", path)
+		fmt.Printf("Watch mode: added %q to watch list\n", path)
 
 		for {
 			stat, err := os.Stat(path)
@@ -166,7 +168,7 @@ func watch(cssFilePaths []string, mergedFile string) (err error) {
 				close(cleanupCh)
 				return err
 			}
-			fmt.Println("Rebuilded")
+			fmt.Printf("Watch mode: rebuilded %q\n", mergedFile)
 
 		case err := <-errCh:
 			close(cleanupCh)
