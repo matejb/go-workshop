@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -222,4 +225,74 @@ func TestServe(t *testing.T) {
 		return
 	}
 
+	paths := []string{
+		"test_resources" + string(os.PathSeparator) + "first.css",
+		"test_resources" + string(os.PathSeparator) + "second.css",
+		"test_resources" + string(os.PathSeparator) + "third.css",
+	}
+
+	tempFile, err := ioutil.TempFile("test_resources", "cssMergeTest")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stat, err := tempFile.Stat()
+	if err != nil {
+		tempFile.Close()
+		t.Fatal(err)
+	}
+
+	out := "test_resources" + string(os.PathSeparator) + stat.Name()
+
+	tempFile.Close()
+
+	defer func() {
+		os.Remove(out)
+	}()
+
+	err = merge(paths, out)
+	if err != nil {
+		t.Errorf("Merge failed with error %q", err)
+	}
+
+	mergedFile := MergedFile(out)
+
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	mergedFile.ServeHTTP(w, req)
+
+	var expected []byte
+	for _, path := range paths {
+		cssContent, err := ioutil.ReadFile(path)
+		if err != nil {
+			t.Fatalf("Test setup failed while processing path %q with error %q", path, err)
+		}
+		expected = append(expected, cssContent...)
+	}
+
+	if string(expected) != w.Body.String() {
+		t.Errorf("Expected serve to output %q, but recived %q", expected, w.Body.String())
+	}
+}
+
+func TestServeFlag(t *testing.T) {
+	if phase < 3 {
+		return
+	}
+
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+
+	_ = parseFlags()
+
+	if !flag.Parsed() {
+		t.Error("Expected cli flags to be parsed!")
+	}
+
+	if flag.Lookup("serve") == nil {
+		t.Errorf("Expected cli flag %q to be readed", "serve")
+	}
 }

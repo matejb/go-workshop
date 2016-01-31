@@ -1,21 +1,28 @@
 # go-workshop
 
-Izrada aplikcija je podjeljenja u sljedeće faze:
+This is an educational purpose application.
 
-1. Izraditi cli app koji iz json datoteke čita listu css datoteke te datoteke spaja u jednu css datoteku, primjer pokretanja
+Application is splited in tree phases.
+
+You are encurage to use `go test` and resolve all test errors.
+To mange development in phases use `go test -phase X` where `X` is phase number.
+
+## Phases
+
+1. Develop CLI application that reads list of CSS files from JSON file and merge them in single CSS file. Use example:
 
 ```bash
-app.exe -list moja_lista.js -out merged.css
+app.exe -list my_list.js -out merged.css
 ```
 
-2. Nadograditi app da može pratiti promjene nad listom css datoteku automatski te čim se one dese generira finalnu css datoteku, primjer pokretanja
+2. Upgrade application with `watch mode` that will watch for changes in list of provided CSS files and rebuild merged CSS file continuously. Use example:
 
 ```bash
-app.exe -watch -list moja_lista.js -out merged.css
+app.exe -watch -list my_list.js -out merged.css
 ```
 
-3. Nadograditi app da može servirati finalnu css datoteku na proizvoljnom portu, primjer pokretanja
+3. Upgrade application so it can serve merged CSS file via HTTP protocol. Use example:
 
 ```bash
-app.exe -watch -serve 8080 -list moja_lista.js -out merged.css
+app.exe -watch -serve 8080 -list my_list.js -out merged.css
 ```
