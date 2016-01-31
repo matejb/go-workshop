@@ -2,9 +2,9 @@
 
 This is an educational purpose application.
 
-Application is splited in tree phases.
+Application is splitted in three phases.
 
-You are encurage to use `go test` and resolve all test errors.
+You are encouraged to use `go test` and resolve all test errors.
 To mange development in phases use `go test -phase X` where `X` is phase number.
 
 ## Phases
