@@ -8,6 +8,16 @@ import (
 	"time"
 )
 
+var (
+	faze int
+)
+
+func init() {
+	flag.IntVar(&faze, "faze", 3, "Which program faze to test")
+
+	flag.Parse()
+}
+
 func TestFlags(t *testing.T) {
 
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
@@ -103,6 +113,10 @@ func TestMarge(t *testing.T) {
 }
 
 func TestWatch(t *testing.T) {
+	if faze < 2 {
+		return
+	}
+
 	paths := []string{
 		"test_resources" + string(os.PathSeparator) + "first.css",
 	}
@@ -173,5 +187,23 @@ func TestWatch(t *testing.T) {
 
 	if endStats.Size() == initStats.Size() {
 		t.Errorf("Watch process is not working %d %d", endStats.Size(), initStats.Size())
+	}
+}
+
+func TestWatchFlag(t *testing.T) {
+	if faze < 2 {
+		return
+	}
+
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+
+	_ = parseFlags()
+
+	if !flag.Parsed() {
+		t.Error("Expected cli flags to be parsed!")
+	}
+
+	if flag.Lookup("watch") == nil {
+		t.Errorf("Expected cli flag %q to be readed", "watch")
 	}
 }

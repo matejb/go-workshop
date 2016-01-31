@@ -25,11 +25,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if params.watch {
+		err := watch(cssPaths, params.out)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 type cliParams struct {
-	list string
-	out  string
+	list  string
+	out   string
+	watch bool
 }
 
 // parseFlags will parse cli program arguments into internal structure for later use
@@ -39,6 +47,7 @@ func parseFlags() (params cliParams) {
 
 	flag.StringVar(&params.list, "list", "", "Path to dir containg css files")
 	flag.StringVar(&params.out, "out", "", "Filename of destination css file")
+	flag.BoolVar(&params.watch, "watch", false, "Enables watch mode that automatically rebuilds destination css file if any of source css files changes")
 
 	// needed info: https://golang.org/pkg/flag/#Parse
 
@@ -140,7 +149,7 @@ func watch(cssFilePaths []string, mergedFile string) (err error) {
 				}
 			}
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		}
 	}
 
