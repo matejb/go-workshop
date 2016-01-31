@@ -10,17 +10,20 @@ import (
 )
 
 var (
-	phaze int
+	phase int
 )
 
 func init() {
-	flag.IntVar(&phaze, "phaze", 3, "Which program phaze to test")
+	// needed because usage was output-ed with note "flag provided but not defined: -phase"
+	flag.Usage = func() {}
+
+	flag.IntVar(&phase, "phase", 3, "Which program phaze to test")
 
 	flag.Parse()
 
 	fmt.Println(`Custom flags for 'go test':
-  -phaze int
-    	Which program phaze to test (default 3)
+  -phase int
+    	Which program phase to test (default 3)
 `)
 }
 
@@ -119,7 +122,7 @@ func TestMarge(t *testing.T) {
 }
 
 func TestWatch(t *testing.T) {
-	if phaze < 2 {
+	if phase < 2 {
 		return
 	}
 
@@ -197,7 +200,7 @@ func TestWatch(t *testing.T) {
 }
 
 func TestWatchFlag(t *testing.T) {
-	if phaze < 2 {
+	if phase < 2 {
 		return
 	}
 
@@ -212,4 +215,11 @@ func TestWatchFlag(t *testing.T) {
 	if flag.Lookup("watch") == nil {
 		t.Errorf("Expected cli flag %q to be readed", "watch")
 	}
+}
+
+func TestServe(t *testing.T) {
+	if phase < 3 {
+		return
+	}
+
 }
